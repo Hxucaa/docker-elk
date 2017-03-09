@@ -30,6 +30,8 @@ services:
       - docker_elk
     depends_on:
       - elasticsearch
+    environment:
+      - LS_HEAP_SIZE=1024m
   kibana:
     build: kibana/
     volumes:
