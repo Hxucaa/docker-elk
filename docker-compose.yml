@@ -8,7 +8,7 @@ services:
 
   elasticsearch1:
     restart: always
-    build: submodules/docker-elk/elasticsearch/
+    build: elasticsearch/
     container_name: elasticsearch1
     cap_add:
       - IPC_LOCK
@@ -65,7 +65,7 @@ services:
 
   logstash:
     restart: always
-    build: submodules/docker-elk/logstash/
+    build: logstash/
     container_name: logstash
     depends_on:
       - elasticsearch1
@@ -75,17 +75,16 @@ services:
     ports:
       - 5000:5000/udp
     volumes:
-      - ./submodules/docker-elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
-      - ./submodules/docker-elk/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
     environment:
       - LS_HEAP_SIZE=1024m
 
   kibana:
     restart: always
-    build: submodules/docker-elk/kibana/
+    build: kibana/
     container_name: kibana
     depends_on:
-      - nginx-proxy
       - elasticsearch1
     #  - elasticsearch2
     networks:
@@ -93,4 +92,4 @@ services:
     ports:
       - 5601:5601
     volumes:
-      - ./submodules/docker-elk/kibana/config/:/usr/share/kibana/config
+      - ./kibana/config/:/usr/share/kibana/config
