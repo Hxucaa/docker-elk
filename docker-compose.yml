@@ -76,7 +76,7 @@ services:
       - 5000:5000/udp
       - 25826:25826 # syslog port
     depends_on:
-      - elasticsearch
+      - elasticsearch1
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./logstash/pipeline:/usr/share/logstash/pipeline
