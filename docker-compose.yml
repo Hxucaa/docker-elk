@@ -1,7 +1,11 @@
 version: '2'
 
 networks:
-  elk:
+  elasticsearch-fluentd:
+    driver: bridge
+  elasticsearch-logstash:
+    driver: bridge
+  elasticsearch-kibana:
     driver: bridge
 
 services:
@@ -21,7 +25,8 @@ services:
         hard: 65536
     mem_limit: 1g
     networks:
-      - elk
+      - elasticsearch-fluentd
+      - elasticsearch-logstash
     #   - esnet
     ports:
       - 9200:9200
@@ -63,6 +68,20 @@ services:
   #     - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
   #     - "discovery.zen.ping.unicast.hosts=elasticsearch1"
 
+  fluentd:
+    restart: always
+    build: fluentd/
+    depends_on:
+      - elasticsearch1
+    networks:
+      - elasticsearch-fluentd
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+
+
   logstash:
     restart: always
     build: logstash/
@@ -71,12 +90,10 @@ services:
       - elasticsearch1
     #  - elasticsearch2
     networks:
-      - elk
+      - elasticsearch-logstash
     ports:
       - 5000:5000/udp
       - 25826:25826 # syslog port
-    depends_on:
-      - elasticsearch1
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./logstash/pipeline:/usr/share/logstash/pipeline
@@ -91,7 +108,7 @@ services:
       - elasticsearch1
     #  - elasticsearch2
     networks:
-      - elk
+      - elasticsearch-kibana
     ports:
       - 5601:5601
     volumes:
