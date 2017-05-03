@@ -72,6 +72,7 @@ services:
   fluentd:
     restart: always
     build: fluentd/
+    container_name: fluentd
     depends_on:
       - elasticsearch1
     networks:
