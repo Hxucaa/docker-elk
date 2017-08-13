@@ -33,7 +33,7 @@ services:
       - 9200:9200
       - 9300:9300
     volumes:
-      - /mnt/elasticsearch/data:/usr/share/elasticsearch/data
+      - /opt/vm-data/elasticsearch/data:/usr/share/elasticsearch/data
     environment:
       # - cluster.name=docker-cluster
       # - bootstrap.memory_lock=true
