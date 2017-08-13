@@ -23,7 +23,7 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-    mem_limit: 1g
+#    mem_limit: 1g
     networks:
       - elasticsearch-fluentd
       - elasticsearch-logstash
