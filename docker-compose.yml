@@ -12,49 +12,19 @@ networks:
   
 
 services:
-
-  elasticsearch1:
+  gateway:
     restart: unless-stopped
-    build: elasticsearch/
-    container_name: elasticsearch1
+    image: itzg/elasticsearch
     cap_add:
       - IPC_LOCK
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
-    # mem_limit: 1g
     networks:
       - elasticsearch-fluentd
       - elasticsearch-logstash
       - elasticsearch-kibana
       - elasticsearch-cluster
     ports:
-      - 9200:9200
-      - 9300:9300
-    volumes:
-      - /opt/vm-data/elasticsearch/data:/usr/share/elasticsearch/data
-    environment:
-      - cluster.name=docker-cluster
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-      # disable X-Pack
-      # see https://www.elastic.co/guide/en/x-pack/current/xpack-settings.html
-      #     https://www.elastic.co/guide/en/x-pack/current/installing-xpack.html#xpack-enabling
-      - xpack.security.enabled=false
-      - xpack.monitoring.enabled=false
-      - xpack.graph.enabled=false
-      - xpack.watcher.enabled=false
-
-  elasticsearch2:
-    restart: unless-stopped
-    build: elasticsearch/
-    container_name: elasticsearch2
-    cap_add:
-      - IPC_LOCK
+      - "9200:9200"
+      - "9300:9300"
     ulimits:
       memlock:
         soft: -1
@@ -62,23 +32,56 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-    # mem_limit: 1g
+    volumes:
+      - /opt/vm-data/elasticsearch-gateway/data:/data
+    environment:
+      UNICAST_HOSTS: master
+      TYPE: GATEWAY
+      ES_JAVA_OPTS: "-Xms1g -Xmx2g"
+
+  master:
+    restart: unless-stopped
+    image: itzg/elasticsearch
+    cap_add:
+      - IPC_LOCK
     networks:
       - elasticsearch-cluster
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
     volumes:
-      - /opt/vm-data/elasticsearch2/data:/usr/share/elasticsearch/data
+      - /opt/vm-data/elasticsearch-master/data:/data
     environment:
-      - cluster.name=docker-cluster
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-      - "discovery.zen.ping.unicast.hosts=elasticsearch1"
-      # disable X-Pack
-      # see https://www.elastic.co/guide/en/x-pack/current/xpack-settings.html
-      #     https://www.elastic.co/guide/en/x-pack/current/installing-xpack.html#xpack-enabling
-      - xpack.security.enabled=false
-      - xpack.monitoring.enabled=false
-      - xpack.graph.enabled=false
-      - xpack.watcher.enabled=false
+      UNICAST_HOSTS: gateway
+      TYPE: MASTER
+      MIN_MASTERS: 2
+      ES_JAVA_OPTS: "-Xms1g -Xmx2g"
+
+  data:
+    restart: unless-stopped
+    image: itzg/elasticsearch
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - elasticsearch-cluster
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - /opt/vm-data/elasticsearch-data/data:/data
+    environment:
+      UNICAST_HOSTS: master,gateway
+      TYPE: DATA
+      ES_JAVA_OPTS: "-Xms1g -Xmx2g"
+
 
   fluentd:
     restart: unless-stopped
