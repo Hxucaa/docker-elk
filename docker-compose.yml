@@ -7,11 +7,14 @@ networks:
     driver: bridge
   elasticsearch-kibana:
     driver: bridge
+  elasticsearch-cluster:
+    driver: bridge
+  
 
 services:
 
   elasticsearch1:
-    restart: always
+    restart: unless-stopped
     build: elasticsearch/
     container_name: elasticsearch1
     cap_add:
@@ -23,20 +26,20 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-#    mem_limit: 1g
+    # mem_limit: 1g
     networks:
       - elasticsearch-fluentd
       - elasticsearch-logstash
       - elasticsearch-kibana
-    #   - esnet
+      - elasticsearch-cluster
     ports:
       - 9200:9200
       - 9300:9300
     volumes:
       - /opt/vm-data/elasticsearch/data:/usr/share/elasticsearch/data
     environment:
-      # - cluster.name=docker-cluster
-      # - bootstrap.memory_lock=true
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
       # disable X-Pack
       # see https://www.elastic.co/guide/en/x-pack/current/xpack-settings.html
@@ -45,36 +48,45 @@ services:
       - xpack.monitoring.enabled=false
       - xpack.graph.enabled=false
       - xpack.watcher.enabled=false
-  # elasticsearch2:
-  #   restart: always
-  #   build: submodules/docker-elk/elasticsearch/
-  #   container_name: elasticsearch2
-  #   cap_add:
-  #     - IPC_LOCK
-  #   ulimits:
-  #     memlock:
-  #       soft: -1
-  #       hard: -1
-  #     nofile:
-  #       soft: 65536
-  #       hard: 65536
-  #   mem_limit: 1g
-  #   networks:
-  #     - esnet
-  #   volumes:
-  #     - /mnt/elasticsearch2/data:/usr/share/elasticsearch/data
-  #   environment:
-  #     - cluster.name=docker-cluster
-  #     - bootstrap.memory_lock=true
-  #     - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-  #     - "discovery.zen.ping.unicast.hosts=elasticsearch1"
+
+  elasticsearch2:
+    restart: unless-stopped
+    build: elasticsearch/
+    container_name: elasticsearch2
+    cap_add:
+      - IPC_LOCK
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    # mem_limit: 1g
+    networks:
+      - elasticsearch-cluster
+    volumes:
+      - /opt/vm-data/elasticsearch2/data:/usr/share/elasticsearch/data
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "discovery.zen.ping.unicast.hosts=elasticsearch1"
+      # disable X-Pack
+      # see https://www.elastic.co/guide/en/x-pack/current/xpack-settings.html
+      #     https://www.elastic.co/guide/en/x-pack/current/installing-xpack.html#xpack-enabling
+      - xpack.security.enabled=false
+      - xpack.monitoring.enabled=false
+      - xpack.graph.enabled=false
+      - xpack.watcher.enabled=false
 
   fluentd:
-    restart: always
+    restart: unless-stopped
     build: fluentd/
     container_name: fluentd
     depends_on:
       - elasticsearch1
+      - elasticsearch2
     networks:
       - elasticsearch-fluentd
     ports:
@@ -85,12 +97,12 @@ services:
 
 
   logstash:
-    restart: always
+    restart: unless-stopped
     build: logstash/
     container_name: logstash
     depends_on:
       - elasticsearch1
-    #  - elasticsearch2
+      - elasticsearch2
     networks:
       - elasticsearch-logstash
     ports:
@@ -103,12 +115,12 @@ services:
       - LS_HEAP_SIZE=1024m
 
   kibana:
-    restart: always
+    restart: unless-stopped
     build: kibana/
     container_name: kibana
     depends_on:
       - elasticsearch1
-    #  - elasticsearch2
+      - elasticsearch2
     networks:
       - elasticsearch-kibana
     ports:
