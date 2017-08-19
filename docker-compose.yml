@@ -81,7 +81,7 @@ services:
 
   logstash:
     restart: unless-stopped
-    build: logstash/
+    build: tenstartups/logstash
     container_name: logstash
     depends_on:
       - gateway
@@ -96,7 +96,7 @@ services:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./logstash/pipeline:/usr/share/logstash/pipeline
     environment:
-      - LS_HEAP_SIZE=1024m
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
 
   kibana:
     restart: unless-stopped
