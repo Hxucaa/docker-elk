@@ -91,7 +91,6 @@ services:
     networks:
       - elasticsearch
     ports:
-      - 5000:5000/udp
       - 25826:25826 # syslog port
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
